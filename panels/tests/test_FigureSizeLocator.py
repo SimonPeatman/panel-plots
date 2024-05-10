@@ -22,7 +22,8 @@ from hypothesis import given, assume
 import pytest
 
 from panels import FigureSizeLocator
-from panels.tests import (almost_equal, gridsize_st, length_st, offset_st)
+from panels.tests import (almost_equal, gridsize_st, length_st, offset_st,
+                          offset_list_st)
 
 
 #: Length units to generate test cases for.
@@ -122,6 +123,21 @@ def test_full_spec_with_hsep(rows, columns, figwidth, figheight, hsep, units):
 
 
 @given(rows=gridsize_st, columns=gridsize_st, figwidth=length_st,
+       figheight=length_st, hsep=offset_list_st)
+@pytest.mark.parametrize('units', TEST_UNITS)
+def test_full_spec_with_hsep_seq(rows, columns, figwidth, figheight, hsep,
+                                 units):
+    """Full specification with horizontal separation."""
+    assume(figwidth > sum(hsep[:columns-1]))
+    l = FigureSizeLocator(rows, columns,
+                          figwidth=figwidth, figheight=figheight,
+                          hsep=hsep[:columns-1], units=units)
+    figwidth_c, figheight_c = l.figsize_in(units)
+    assert almost_equal(figwidth_c, figwidth)
+    assert almost_equal(figheight_c, figheight)
+
+
+@given(rows=gridsize_st, columns=gridsize_st, figwidth=length_st,
        figheight=length_st, vsep=offset_st)
 @pytest.mark.parametrize('units', TEST_UNITS)
 def test_full_spec_with_vsep(rows, columns, figwidth, figheight, vsep, units):
@@ -130,6 +146,21 @@ def test_full_spec_with_vsep(rows, columns, figwidth, figheight, vsep, units):
     l = FigureSizeLocator(rows, columns,
                           figwidth=figwidth, figheight=figheight,
                           vsep=vsep, units=units)
+    figwidth_c, figheight_c = l.figsize_in(units)
+    assert almost_equal(figwidth_c, figwidth)
+    assert almost_equal(figheight_c, figheight)
+
+
+@given(rows=gridsize_st, columns=gridsize_st, figwidth=length_st,
+       figheight=length_st, vsep=offset_list_st)
+@pytest.mark.parametrize('units', TEST_UNITS)
+def test_full_spec_with_vsep_seq(rows, columns, figwidth, figheight, vsep,
+                                 units):
+    """Full specification with vertical separation."""
+    assume(figheight > sum(vsep[:rows-1]))
+    l = FigureSizeLocator(rows, columns,
+                          figwidth=figwidth, figheight=figheight,
+                          vsep=vsep[:rows-1], units=units)
     figwidth_c, figheight_c = l.figsize_in(units)
     assert almost_equal(figwidth_c, figwidth)
     assert almost_equal(figheight_c, figheight)
@@ -146,6 +177,23 @@ def test_full_spec_with_hsep_and_vsep(rows, columns, figwidth, figheight,
     l = FigureSizeLocator(rows, columns,
                           figwidth=figwidth, figheight=figheight,
                           hsep=hsep, vsep=vsep, units=units)
+    figwidth_c, figheight_c = l.figsize_in(units)
+    assert almost_equal(figwidth_c, figwidth)
+    assert almost_equal(figheight_c, figheight)
+
+
+@given(rows=gridsize_st, columns=gridsize_st, figwidth=length_st,
+       figheight=length_st, hsep=offset_list_st, vsep=offset_list_st)
+@pytest.mark.parametrize('units', TEST_UNITS)
+def test_full_spec_with_hsep_seq_and_vsep_seq(rows, columns, figwidth,
+                                              figheight, hsep, vsep, units):
+    """Full specification with horizontal and vertical separation."""
+    assume(figwidth > sum(hsep[:columns-1]))
+    assume(figheight > sum(vsep[:rows-1]))
+    l = FigureSizeLocator(rows, columns,
+                          figwidth=figwidth, figheight=figheight,
+                          hsep=hsep[:columns-1], vsep=vsep[:rows-1],
+                          units=units)
     figwidth_c, figheight_c = l.figsize_in(units)
     assert almost_equal(figwidth_c, figwidth)
     assert almost_equal(figheight_c, figheight)
@@ -168,11 +216,34 @@ def test_width_spec_with_hsep(rows, columns, figwidth, hsep, units):
 
 
 @given(rows=gridsize_st, columns=gridsize_st, figwidth=length_st,
+       hsep=offset_list_st)
+@pytest.mark.parametrize('units', TEST_UNITS)
+def test_width_spec_with_hsep_seq(rows, columns, figwidth, hsep, units):
+    """Width specification with horizontal separation."""
+    assume(figwidth > sum(hsep[:columns-1]))
+    l = FigureSizeLocator(rows, columns, figwidth=figwidth,
+                          hsep=hsep[:columns-1], units=units)
+    figwidth_c, _ = l.figsize_in(units)
+    assert almost_equal(figwidth_c, figwidth)
+
+
+@given(rows=gridsize_st, columns=gridsize_st, figwidth=length_st,
        vsep=offset_st)
 @pytest.mark.parametrize('units', TEST_UNITS)
 def test_width_spec_with_vsep(rows, columns, figwidth, vsep, units):
     """Width specification with vertical separation."""
     l = FigureSizeLocator(rows, columns, figwidth=figwidth, vsep=vsep,
+                          units=units)
+    figwidth_c, _ = l.figsize_in(units)
+    assert almost_equal(figwidth_c, figwidth)
+
+
+@given(rows=gridsize_st, columns=gridsize_st, figwidth=length_st,
+       vsep=offset_list_st)
+@pytest.mark.parametrize('units', TEST_UNITS)
+def test_width_spec_with_vsep_seq(rows, columns, figwidth, vsep, units):
+    """Width specification with vertical separation."""
+    l = FigureSizeLocator(rows, columns, figwidth=figwidth, vsep=vsep[:rows-1],
                           units=units)
     figwidth_c, _ = l.figsize_in(units)
     assert almost_equal(figwidth_c, figwidth)
@@ -187,6 +258,20 @@ def test_width_spec_with_hsep_and_vsep(rows, columns, figwidth, hsep, vsep,
     assume(figwidth > hsep * (columns - 1))
     l = FigureSizeLocator(rows, columns, figwidth=figwidth,
                           hsep=hsep, vsep=vsep, units=units)
+    figwidth_c, _ = l.figsize_in(units)
+    assert almost_equal(figwidth_c, figwidth)
+
+
+@given(rows=gridsize_st, columns=gridsize_st, figwidth=length_st,
+       hsep=offset_list_st, vsep=offset_list_st)
+@pytest.mark.parametrize('units', TEST_UNITS)
+def test_width_spec_with_hsep_seq_and_vsep_seq(rows, columns, figwidth, hsep,
+                                               vsep, units):
+    """Width specification with horizontal and vertical separation."""
+    assume(figwidth > sum(hsep[:columns-1]))
+    l = FigureSizeLocator(rows, columns, figwidth=figwidth,
+                          hsep=hsep[:columns-1], vsep=vsep[:rows-1],
+                          units=units)
     figwidth_c, _ = l.figsize_in(units)
     assert almost_equal(figwidth_c, figwidth)
 
@@ -207,6 +292,17 @@ def test_height_spec_with_hsep(rows, columns, figheight, hsep, units):
 
 
 @given(rows=gridsize_st, columns=gridsize_st, figheight=length_st,
+       hsep=offset_list_st)
+@pytest.mark.parametrize('units', TEST_UNITS)
+def test_height_spec_with_hsep_seq(rows, columns, figheight, hsep, units):
+    """Height specification with horizontal separation."""
+    l = FigureSizeLocator(rows, columns, figheight=figheight,
+                          hsep=hsep[:columns-1], units=units)
+    _, figheight_c = l.figsize_in(units)
+    assert almost_equal(figheight_c, figheight)
+
+
+@given(rows=gridsize_st, columns=gridsize_st, figheight=length_st,
        vsep=offset_st)
 @pytest.mark.parametrize('units', TEST_UNITS)
 def test_height_spec_with_vsep(rows, columns, figheight, vsep, units):
@@ -214,6 +310,18 @@ def test_height_spec_with_vsep(rows, columns, figheight, vsep, units):
     assume(figheight > vsep * (rows - 1))
     l = FigureSizeLocator(rows, columns, figheight=figheight, vsep=vsep,
                           units=units)
+    _, figheight_c = l.figsize_in(units)
+    assert almost_equal(figheight_c, figheight)
+
+
+@given(rows=gridsize_st, columns=gridsize_st, figheight=length_st,
+       vsep=offset_list_st)
+@pytest.mark.parametrize('units', TEST_UNITS)
+def test_height_spec_with_vsep_seq(rows, columns, figheight, vsep, units):
+    """Height specification with vertical separation."""
+    assume(figheight > sum(vsep[:rows-1]))
+    l = FigureSizeLocator(rows, columns, figheight=figheight,
+                          vsep=vsep[:rows-1], units=units)
     _, figheight_c = l.figsize_in(units)
     assert almost_equal(figheight_c, figheight)
 
@@ -227,6 +335,20 @@ def test_height_spec_with_hsep_and_vsep(rows, columns, figheight, hsep, vsep,
     assume(figheight > vsep * (rows - 1))
     l = FigureSizeLocator(rows, columns, figheight=figheight,
                           hsep=hsep, vsep=vsep, units=units)
+    _, figheight_c = l.figsize_in(units)
+    assert almost_equal(figheight_c, figheight)
+
+
+@given(rows=gridsize_st, columns=gridsize_st, figheight=length_st,
+       hsep=offset_list_st, vsep=offset_list_st)
+@pytest.mark.parametrize('units', TEST_UNITS)
+def test_height_spec_with_hsep_seq_and_vsep_seq(rows, columns, figheight, hsep,
+                                                vsep, units):
+    """Height specification with horizontal and vertical separation."""
+    assume(figheight > sum(vsep[:rows-1]))
+    l = FigureSizeLocator(rows, columns, figheight=figheight,
+                          hsep=hsep[:columns-1], vsep=vsep[:rows-1],
+                          units=units)
     _, figheight_c = l.figsize_in(units)
     assert almost_equal(figheight_c, figheight)
 
@@ -470,6 +592,27 @@ def test_full_spec_with_all(rows, columns, figwidth, figheight, hsep, vsep,
 
 
 @given(rows=gridsize_st, columns=gridsize_st, figwidth=length_st,
+       figheight=length_st, hsep=offset_list_st, vsep=offset_list_st,
+       padleft=offset_st, padright=offset_st, padtop=offset_st,
+       padbottom=offset_st)
+@pytest.mark.parametrize('units', TEST_UNITS)
+def test_full_spec_with_all_sep_seq(rows, columns, figwidth, figheight, hsep,
+                                    vsep, padleft, padright, padtop, padbottom,
+                                    units):
+    """Full specification with separation and padding."""
+    assume(figwidth > padleft + sum(hsep[:columns-1]) + padright)
+    assume(figheight > padtop + sum(vsep[:rows-1]) + padbottom)
+    l = FigureSizeLocator(rows, columns,
+                          figwidth=figwidth, figheight=figheight,
+                          hsep=hsep[:columns-1], vsep=vsep[:rows-1],
+                          padleft=padleft, padright=padright,
+                          padtop=padtop, padbottom=padbottom, units=units)
+    figwidth_c, figheight_c = l.figsize_in(units)
+    assert almost_equal(figwidth_c, figwidth)
+    assert almost_equal(figheight_c, figheight)
+
+
+@given(rows=gridsize_st, columns=gridsize_st, figwidth=length_st,
        hsep=offset_st, vsep=offset_st, padleft=offset_st, padright=offset_st,
        padtop=offset_st, padbottom=offset_st)
 @pytest.mark.parametrize('units', TEST_UNITS)
@@ -479,6 +622,23 @@ def test_width_spec_with_all(rows, columns, figwidth, hsep, vsep, padleft,
     assume(figwidth > padleft + (columns - 1) * hsep + padright)
     l = FigureSizeLocator(rows, columns, figwidth=figwidth,
                           hsep=hsep, vsep=vsep,
+                          padleft=padleft, padright=padright,
+                          padtop=padtop, padbottom=padbottom, units=units)
+    figwidth_c, _ = l.figsize_in(units)
+    assert almost_equal(figwidth_c, figwidth)
+
+
+@given(rows=gridsize_st, columns=gridsize_st, figwidth=length_st,
+       hsep=offset_list_st, vsep=offset_list_st, padleft=offset_st,
+       padright=offset_st, padtop=offset_st, padbottom=offset_st)
+@pytest.mark.parametrize('units', TEST_UNITS)
+def test_width_spec_with_all_sep_seq(rows, columns, figwidth, hsep, vsep,
+                                     padleft, padright, padtop, padbottom,
+                                     units):
+    """Width specification with separation and padding."""
+    assume(figwidth > padleft + sum(hsep[:columns-1]) + padright)
+    l = FigureSizeLocator(rows, columns, figwidth=figwidth,
+                          hsep=hsep[:columns-1], vsep=vsep[:rows-1],
                           padleft=padleft, padright=padright,
                           padtop=padtop, padbottom=padbottom, units=units)
     figwidth_c, _ = l.figsize_in(units)
@@ -495,6 +655,22 @@ def test_height_spec_with_all(rows, columns, figheight, hsep, vsep, padleft,
     assume(figheight > padtop + (rows - 1) * vsep + padbottom)
     l = FigureSizeLocator(rows, columns, figheight=figheight,
                           hsep=hsep, vsep=vsep,
+                          padleft=padleft, padright=padright,
+                          padtop=padtop, padbottom=padbottom, units=units)
+    _, figheight_c = l.figsize_in(units)
+    assert almost_equal(figheight_c, figheight)
+
+
+@given(rows=gridsize_st, columns=gridsize_st, figheight=length_st,
+       hsep=offset_list_st, vsep=offset_list_st, padleft=offset_st,
+       padright=offset_st, padtop=offset_st, padbottom=offset_st)
+@pytest.mark.parametrize('units', TEST_UNITS)
+def test_height_spec_with_all(rows, columns, figheight, hsep, vsep, padleft,
+                              padright, padtop, padbottom, units):
+    """Height specification with separation and padding."""
+    assume(figheight > padtop + sum(vsep[:rows-1]) + padbottom)
+    l = FigureSizeLocator(rows, columns, figheight=figheight,
+                          hsep=hsep[:columns-1], vsep=vsep[:rows-1],
                           padleft=padleft, padright=padright,
                           padtop=padtop, padbottom=padbottom, units=units)
     _, figheight_c = l.figsize_in(units)

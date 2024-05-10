@@ -20,6 +20,7 @@ from __future__ import (absolute_import, division, print_function)
 
 from itertools import product
 import warnings
+import collections.abc
 
 from ._units import convert_units
 
@@ -45,13 +46,15 @@ class PanelSizeLocator(object):
 
         Keyword arguments:
 
-        * hsep (default=0): float
+        * hsep (default=0): float or sequence of floats
             The horizontal spacing between each panel and neighbouring
-            panels in the same row.
+            panels in the same row. A sequence must have a length of one
+            shorter than the number of columns.
 
-        * vsep (default=0): float
+        * vsep (default=0): float or sequence of floats
             The vertical spacing between each panel and neighbouring
-            panels in the same column.
+            panels in the same column. A sequence must have a length of one
+            shorter than the number of rows.
 
         * padleft (default=0): float
             The spacing between the left edge of the figure and the left
@@ -77,17 +80,29 @@ class PanelSizeLocator(object):
         self.rows, self.columns = rows, columns
         self.panelwidth = panelwidth
         self.panelheight = panelheight
-        self.hsep = hsep
-        self.vsep = vsep
+        if isinstance(hsep, collections.abc.Sequence):
+            if len(hsep) != columns - 1:
+                raise ValueError('If hsep is a sequence, it must have one fewer'
+                                 ' value than the number of columns')
+            self.hsep = hsep
+        else:
+            self.hsep = [hsep] * (columns - 1)
+        if isinstance(vsep, collections.abc.Sequence):
+            if len(vsep) != rows - 1:
+                raise ValueError('If vsep is a sequence, it must have one fewer'
+                                 ' value than the number of rows')
+            self.vsep = vsep
+        else:
+            self.vsep = [vsep] * (rows - 1)
         self.padleft = padleft
         self.padright = padright
         self.padtop = padtop
         self.padbottom = padbottom
         self.units = units
         self.figwidth = (self.padleft + self.columns * self.panelwidth +
-                         (self.columns - 1) * self.hsep + self.padright)
+                         sum(self.hsep) + self.padright)
         self.figheight = (self.padtop + self.rows * self.panelheight +
-                          (self.rows - 1) * self.vsep + self.padbottom)
+                          sum(self.vsep) + self.padbottom)
         self.panelwidth_fig = self.panelwidth / self.figwidth
         self.panelheight_fig = self.panelheight / self.figheight
 
@@ -143,9 +158,9 @@ class PanelSizeLocator(object):
            0 in the top-left.
 
         """
-        x = self.padleft + (self.panelwidth + self.hsep) * column
+        x = self.padleft + self.panelwidth * column + sum(self.hsep[:column])
         y = (self.figheight - self.padtop -
-             self.panelheight * (row + 1) - self.vsep * row)
+             self.panelheight * (row + 1) - sum(self.vsep[:row]))
         x_fig = x / self.figwidth
         y_fig = y / self.figheight
         return (x_fig, y_fig, self.panelwidth_fig, self.panelheight_fig)
@@ -183,13 +198,15 @@ class FigureSizeLocator(PanelSizeLocator):
             both the `figwidth` and `figheight` keyword arguments are
             given then `panelratio` will be ignored.
 
-        * hsep (default=0): float
+        * hsep (default=0): float or sequence of floats
             The horizontal spacing between each panel and neighbouring
-            panels in the same row.
+            panels in the same row. A sequence must have a length of one
+            shorter than the number of columns.
 
-        * vsep (default=0): float
+        * vsep (default=0): float or sequence of floats
             The vertical spacing between each panel and neighbouring
-            panels in the same column.
+            panels in the same column. A sequence must have a length of one
+            shorter than the number of rows.
 
         * padleft (default=0): float
             The spacing between the left edge of the figure and the left
@@ -250,13 +267,15 @@ class FigureSizeLocator(PanelSizeLocator):
             both the `figwidth` and `figheight` keyword arguments are
             given then `panelratio` will be ignored.
 
-        * hsep (default=0): float
+        * hsep (default=0): float or sequence of floats
             The horizontal spacing between each panel and neighbouring
-            panels in the same row.
+            panels in the same row. A sequence must have a length of one
+            shorter than the number of columns.
 
-        * vsep (default=0): float
+        * vsep (default=0): float or sequence of floats
             The vertical spacing between each panel and neighbouring
-            panels in the same column.
+            panels in the same column. A sequence must have a length of one
+            shorter than the number of rows.
 
         * padleft (default=0): float
             The spacing between the left edge of the figure and the left
@@ -278,6 +297,18 @@ class FigureSizeLocator(PanelSizeLocator):
         if figwidth is None and figheight is None:
             raise ValueError('one or both of the "figwidth" and "figheight" '
                              'keywords must be used')
+        if isinstance(hsep, collections.abc.Sequence):
+            if len(hsep) != columns - 1:
+                raise ValueError('If hsep is a sequence, it must have one fewer'
+                                 ' value than the number of columns')
+        else:
+            hsep = [hsep] * (columns - 1)
+        if isinstance(vsep, collections.abc.Sequence):
+            if len(vsep) != rows - 1:
+                raise ValueError('If vsep is a sequence, it must have one fewer'
+                                 ' value than the number of rows')
+        else:
+            vsep = [vsep] * (rows - 1)
         if figwidth is not None and figheight is not None:
             # Both width and height are prescribed, choose the panel size
             # appropriately (ignoring any specified aspect ratio):
@@ -285,9 +316,9 @@ class FigureSizeLocator(PanelSizeLocator):
                 msg = ('the "panelratio" keyword is ignored when both the '
                        '"figwidth" and "figheight" keywords are used')
                 warnings.warn(msg)
-            panelwidth = (figwidth - (columns - 1) * hsep - padleft -
+            panelwidth = (figwidth - sum(hsep) - padleft -
                           padright) / float(columns)
-            panelheight = (figheight - (rows - 1) * vsep - padtop -
+            panelheight = (figheight - sum(vsep) - padtop -
                            padbottom) / float(rows)
             if panelwidth <=0 or panelheight <= 0:
                 msg = ('the specified dimensions are not large enough to'
@@ -297,7 +328,7 @@ class FigureSizeLocator(PanelSizeLocator):
             # Only the figure height is prescribed, choose the panel height
             # appropriately and determine the panel width from the aspect
             # ratio:
-            panelheight = (figheight - (rows - 1) * vsep - padtop -
+            panelheight = (figheight - sum(vsep) - padtop -
                            padbottom) / float(rows)
             if panelheight <= 0:
                 msg = ('the specified figure height is not tall enough to '
@@ -308,7 +339,7 @@ class FigureSizeLocator(PanelSizeLocator):
             # Only the figure width is prescribed, choose the panel width
             # appropriately and determine the panel height from the aspect
             # ratio:
-            panelwidth = (figwidth - (columns - 1) * hsep - padleft -
+            panelwidth = (figwidth - sum(hsep) - padleft -
                           padright) / float(columns)
             if panelwidth <= 0:
                 msg = ('the specified figure width is not wide enough to '

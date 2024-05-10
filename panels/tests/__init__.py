@@ -18,11 +18,12 @@
 
 from __future__ import (absolute_import, division, print_function)
 
-from hypothesis.strategies import integers, floats, sampled_from
+from hypothesis.strategies import integers, floats, sampled_from, lists
 
 
 #: A stretegy to generate positive integers representing grid sizes.
-gridsize_st = integers(min_value=1, max_value=100)
+max_gridsize = 100
+gridsize_st = integers(min_value=1, max_value=max_gridsize)
 
 #: A strategy to generate lengths (e.g. for panel/figure sizes).
 length_st = floats(min_value=1e-5, max_value=1e5, allow_nan=False,
@@ -31,6 +32,10 @@ length_st = floats(min_value=1e-5, max_value=1e5, allow_nan=False,
 #: A strategy to generate offsets (e.g. for padding or separation).
 offset_st = floats(min_value=0, max_value=1e5, allow_nan=False,
                    allow_infinity=False)
+
+#: A strategy to generate a sequence of offsets
+offset_list_st = lists(offset_st, min_size=max_gridsize-1,
+                       max_size=max_gridsize-1)
 
 #: A strategy to generate units of length.
 unit_st = sampled_from(('mm', 'cm', 'inches'))

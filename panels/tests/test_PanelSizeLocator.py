@@ -23,7 +23,7 @@ import pytest
 
 from panels import PanelSizeLocator
 from panels.tests import (check_panels_in_figure, gridsize_st, length_st,
-                          offset_st, almost_equal)
+                          offset_st, offset_list_st, almost_equal)
 
 
 #: Length units to generate test cases for.
@@ -71,8 +71,21 @@ def test_with_hsep(rows, columns, panelwidth, panelheight, hsep, units):
     l = PanelSizeLocator(rows, columns, panelwidth, panelheight,
                          hsep=hsep, units=units)
     figwidth, figheight = l.figsize_in(units)
-    assert figwidth == hsep * (columns - 1) + columns * panelwidth
-    assert figheight == rows * panelheight
+    assert almost_equal(figwidth, hsep * (columns - 1) + columns * panelwidth)
+    assert almost_equal(figheight, rows * panelheight)
+    check_panels_in_figure(l)
+
+
+@pytest.mark.parametrize("units", TEST_UNITS)
+@given(rows=gridsize_st, columns=gridsize_st, panelwidth=length_st,
+       panelheight=length_st, hsep=offset_list_st)
+def test_with_hsep_seq(rows, columns, panelwidth, panelheight, hsep, units):
+    """Positioning with horizontal separation."""
+    l = PanelSizeLocator(rows, columns, panelwidth, panelheight,
+                         hsep=hsep[:columns-1], units=units)
+    figwidth, figheight = l.figsize_in(units)
+    assert almost_equal(figwidth, sum(hsep[:columns-1]) + columns * panelwidth)
+    assert almost_equal(figheight, rows * panelheight)
     check_panels_in_figure(l)
 
 
@@ -84,8 +97,21 @@ def test_with_vsep(rows, columns, panelwidth, panelheight, vsep, units):
     l = PanelSizeLocator(rows, columns, panelwidth, panelheight,
                          vsep=vsep, units=units)
     figwidth, figheight = l.figsize_in(units)
-    assert figwidth == columns * panelwidth
-    assert figheight == vsep * (rows - 1) + rows * panelheight
+    assert almost_equal(figwidth, columns * panelwidth)
+    assert almost_equal(figheight, vsep * (rows - 1) + rows * panelheight)
+    check_panels_in_figure(l)
+
+
+@pytest.mark.parametrize("units", TEST_UNITS)
+@given(rows=gridsize_st, columns=gridsize_st, panelwidth=length_st,
+       panelheight=length_st, vsep=offset_list_st)
+def test_with_vsep_seq(rows, columns, panelwidth, panelheight, vsep, units):
+    """Positioning with vertical separation."""
+    l = PanelSizeLocator(rows, columns, panelwidth, panelheight,
+                         vsep=vsep[:rows-1], units=units)
+    figwidth, figheight = l.figsize_in(units)
+    assert almost_equal(figwidth, columns * panelwidth)
+    assert almost_equal(figheight, sum(vsep[:rows-1]) + rows * panelheight)
     check_panels_in_figure(l)
 
 
@@ -98,10 +124,23 @@ def test_with_hsep_and_vsep(rows, columns, panelwidth, panelheight,
     l = PanelSizeLocator(rows, columns, panelwidth, panelheight,
                          hsep=hsep, vsep=vsep, units=units)
     figwidth, figheight = l.figsize_in(units)
-    assert figwidth == hsep * (columns - 1) + columns * panelwidth
-    assert figheight == vsep * (rows - 1) + rows * panelheight
+    assert almost_equal(figwidth, hsep * (columns - 1) + columns * panelwidth)
+    assert almost_equal(figheight, vsep * (rows - 1) + rows * panelheight)
     check_panels_in_figure(l)
 
+
+@pytest.mark.parametrize("units", TEST_UNITS)
+@given(rows=gridsize_st, columns=gridsize_st, panelwidth=length_st,
+       panelheight=length_st, hsep=offset_list_st, vsep=offset_list_st)
+def test_with_hsep_seq_and_vsep_seq(rows, columns, panelwidth, panelheight,
+                                    hsep, vsep, units):
+    """Positioning with horizontal and vertical separation."""
+    l = PanelSizeLocator(rows, columns, panelwidth, panelheight,
+                         hsep=hsep[:columns-1], vsep=vsep[:rows-1], units=units)
+    figwidth, figheight = l.figsize_in(units)
+    assert almost_equal(figwidth, sum(hsep[:columns-1]) + columns * panelwidth)
+    assert almost_equal(figheight, sum(vsep[:rows-1]) + rows * panelheight)
+    check_panels_in_figure(l)
 
 #-----------------------------------------------------------------------
 # Tests with padding.
@@ -194,10 +233,31 @@ def test_with_pad_and_sep(rows, columns, panelwidth, panelheight, hsep, vsep,
                          padleft=padleft, padright=padright,
                          padtop=padtop, padbottom=padbottom, units=units)
     figwidth, figheight = l.figsize_in(units)
-    assert figwidth == (padleft + columns * panelwidth +
-                        (columns - 1) * hsep + padright)
-    assert figheight == (padtop + rows * panelheight +
-                         (rows - 1) * vsep + padbottom)
+    assert almost_equal(figwidth, (padleft + columns * panelwidth +
+                                   (columns - 1) * hsep + padright))
+    assert almost_equal(figheight, (padtop + rows * panelheight +
+                                    (rows - 1) * vsep + padbottom))
+    check_panels_in_figure(l)
+
+
+@given(rows=gridsize_st, columns=gridsize_st, panelwidth=length_st,
+       panelheight=length_st, hsep=offset_list_st, vsep=offset_list_st,
+       padleft=offset_st, padright=offset_st, padtop=offset_st,
+       padbottom=offset_st)
+@pytest.mark.parametrize("units", TEST_UNITS)
+def test_with_pad_and_sep_seq(rows, columns, panelwidth, panelheight, hsep,
+                              vsep, padleft, padright, padtop, padbottom,
+                              units):
+    """Positioning with both padding and separation."""
+    l = PanelSizeLocator(rows, columns, panelwidth, panelheight,
+                         hsep=hsep[:columns-1], vsep=vsep[:rows-1],
+                         padleft=padleft, padright=padright,
+                         padtop=padtop, padbottom=padbottom, units=units)
+    figwidth, figheight = l.figsize_in(units)
+    assert almost_equal(figwidth, (padleft + columns * panelwidth +
+                                   sum(hsep[:columns-1]) + padright))
+    assert almost_equal(figheight, (padtop + rows * panelheight +
+                                    sum(vsep[:rows-1]) + padbottom))
     check_panels_in_figure(l)
 
 
