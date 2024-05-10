@@ -150,6 +150,32 @@ class PanelSizeLocator(object):
         y_fig = y / self.figheight
         return (x_fig, y_fig, self.panelwidth_fig, self.panelheight_fig)
 
+    def span_panel_position(self, row1, column1, row2, column2):
+        """
+        Returns the matplotlib-style (x, y, width, height) position of
+        a panel in figure coordinates, which spans the total area of the
+        two given panels.
+
+        Arguments:
+
+        row1, column1, row2, column2: integer
+           The row and column indices of the two panels, where indices
+           start at 0 in the top-left. The returned panel position will
+           span the full extent of both panels.
+
+        """
+        x1 = self.padleft + (self.panelwidth + self.hsep) * column1
+        x2 = self.padleft + (self.panelwidth + self.hsep) * column2
+        y1 = (self.figheight - self.padtop -
+              self.panelheight * (row1 + 1) - self.vsep * row1)
+        y2 = (self.figheight - self.padtop -
+              self.panelheight * (row2 + 1) - self.vsep * row2)
+        x_fig = min(x1, x2) / self.figwidth
+        y_fig = min(y1, y2) / self.figheight
+        width_fig = max(x1, x2) / self.figwidth + self.panelwidth_fig - x_fig
+        height_fig = max(y1, y2) / self.figheight + self.panelheight_fig - y_fig
+        return (x_fig, y_fig, width_fig, height_fig)
+
 
 class FigureSizeLocator(PanelSizeLocator):
     """A panel locator based on total figure size."""
